@@ -1,43 +1,16 @@
-# Example of usage `aws_s3_upload_lite`
+# example
 
-```dart
+A new Flutter project.
 
-import 'dart:io';
+## Getting Started
 
-import 'package:aws_s3_upload_lite/aws_s3_upload_lite.dart';
-import 'package:flutter/material.dart';
+This project is a starting point for a Flutter application.
 
-void main() {
-  uploadbyfile();
-  uploadbyUint8List();
-}
+A few resources to get you started if this is your first Flutter project:
 
-Future<void> uploadbyfile() async {
-  String response = await AwsS3.uploadFile(
-      accessKey: "AKxxxxxxxxxxxxx",
-      secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-      file: File("path_to_file"),
-      bucket: "bucket_name",
-      region: "us-east-2",
-      destDir: "",
-      filename: "x.png",
-      metadata: {"test": "test"});
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-  debugPrint(response);
-}
-
-Future<void> uploadbyUint8List() async {
-  String response = await AwsS3.uploadUint8List(
-      accessKey: "AKxxxxxxxxxxxxx",
-      secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-      file: File("path_to_file").readAsBytesSync(),
-      bucket: "bucket_name",
-      region: "us-east-2",
-      destDir: "",
-      filename: "x.png",
-      metadata: {"test": "test"});
-
-  debugPrint(response);
-}
-
-```
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
