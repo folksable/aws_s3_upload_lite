@@ -42,7 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
       UploadResponse resp = await AwsS3.uploadFile(
           accessKey: "AKxxxxxxxxxxxxx",
           secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-          file: File("path_to_file"),
+          file: File(file.path),
           bucket: "bucket_name",
           region: "us-east-2",
           destDir:
@@ -53,8 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
             setState(() {
               _uploadProgress = p0 / p1;
             });
-          },
-          );
+          });
       setState(() {
         response = resp.statusCode.toString();
       });
@@ -76,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
               'Upload Progress',
             ),
             Text(
-              _uploadProgress.toString(),
+              _uploadProgress.toStringAsFixed(1).toString(),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Text(
