@@ -27,6 +27,11 @@ class UploadResponse {
       data: e.response?.data,
     );
   }
+
+  @override
+  String toString() {
+    return 'UploadResponse{statusCode: $statusCode, message: $message, data: $data}';
+  }
 }
 
 /// Convenience class for uploading files to AWS S3
@@ -141,7 +146,14 @@ class AwsS3 {
     }
 
     try {
-      final res = await dioClient.postUri(uri,
+      final res = await dioClient.post(
+          endpoint,
+          options: Options(
+            contentType: 'multipart/form-data',
+            method: 'POST',
+            responseType: ResponseType.json,
+          ),
+          queryParameters: metadataParams,
           data: formData, onSendProgress: onSendProgress);
 
       final statusCode = res.statusCode;

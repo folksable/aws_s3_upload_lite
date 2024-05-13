@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:aws_s3_upload_lite/enum/acl.dart';
+import 'package:example/env/env.dart';
 import 'package:flutter/material.dart';
 import 'package:aws_s3_upload_lite/aws_s3_upload_lite.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,20 +42,22 @@ class _MyHomePageState extends State<MyHomePage> {
     // upload the file to s3
     if (file != null) {
       UploadResponse resp = await AwsS3.uploadFile(
-          accessKey: "AKxxxxxxxxxxxxx",
-          secretKey: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+          accessKey: Env.awsAccessKeyId,
+          secretKey: Env.awsSecretAccessKey,
           file: File(file.path),
-          bucket: "bucket_name",
-          region: "us-east-2",
+          bucket: Env.awsBucketName,
+          region: Env.awsRegion,
           destDir:
               "", // The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
-          filename: "x.png", //The filename to upload as
-          metadata: {"test": "test"}, // optional,
+          filename: "dio_test_img.png", //The filename to upload as
+          acl: ACL.private,
+          useSSL: true,
           onSendProgress: (p0, p1) {
             setState(() {
               _uploadProgress = p0 / p1;
             });
           });
+      print(resp.toString());
       setState(() {
         response = resp.statusCode.toString();
       });
