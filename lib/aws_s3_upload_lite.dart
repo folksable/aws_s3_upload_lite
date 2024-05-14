@@ -114,6 +114,11 @@ class AwsS3 {
       req.fields.addAll(metadataParams);
     }
 
+    // If headers isn't null, add headers to the request.
+    if (headers != null) {
+      req.headers.addAll(headers);
+    }
+
     try {
       final res = await req.send();
 
@@ -182,6 +187,9 @@ class AwsS3 {
 
     /// Additional metadata to be attached to the upload
     Map<String, String>? metadata,
+
+    /// Additional headers to be attached to the upload
+    Map<String, String>? headers
   }) async {
     var httpStr = 'http';
     if (useSSL) {
@@ -240,6 +248,11 @@ class AwsS3 {
     // If metadata isn't null, add metadata params to the request.
     if (metadata != null) {
       req.fields.addAll(metadataParams);
+    }
+
+    // If headers isn't null, add headers to the request.
+    if (headers != null) {
+      req.headers.addAll(headers);
     }
 
     try {
