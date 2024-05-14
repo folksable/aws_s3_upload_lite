@@ -51,13 +51,16 @@ class _MyHomePageState extends State<MyHomePage> {
               "", // The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
           filename: "dio_test_img.png", //The filename to upload as
           acl: ACL.private,
+          contentType: 'image/png',
+          headers: {
+            "Content-Disposition": "inline"
+          },
           useSSL: true,
           onSendProgress: (p0, p1) {
             setState(() {
               _uploadProgress = p0 / p1;
             });
           });
-      print(resp.toString());
       setState(() {
         response = resp.statusCode.toString();
       });

@@ -16,7 +16,7 @@ import './src/policy.dart';
 class UploadResponse {
   final int? statusCode;
   final String? message;
-  final Map<String, dynamic>? data;
+  final dynamic data;
 
   const UploadResponse({this.statusCode, this.message, this.data});
 
@@ -37,47 +37,48 @@ class UploadResponse {
 /// Convenience class for uploading files to AWS S3
 class AwsS3 {
   /// Upload a file, returning the status code 200/204 on success.
-  static Future<UploadResponse> uploadFile(
-      {
-      /// AWS access key
-      required String accessKey,
+  static Future<UploadResponse> uploadFile({
+    /// AWS access key
+    required String accessKey,
 
-      /// AWS secret key
-      required String secretKey,
+    /// AWS secret key
+    required String secretKey,
 
-      /// The name of the S3 storage bucket to upload  to
-      required String bucket,
+    /// The name of the S3 storage bucket to upload  to
+    required String bucket,
 
-      /// The file to upload
-      required File file,
+    /// The file to upload
+    required File file,
 
-      /// The AWS region. Must be formatted correctly, e.g. us-west-1
-      required String region,
+    /// The AWS region. Must be formatted correctly, e.g. us-west-1
+    required String region,
 
-      /// The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
-      required String destDir,
+    /// The path to upload the file to (e.g. "uploads/public"). Defaults to the root "directory"
+    required String destDir,
 
-      /// The filename to upload as.
-      required String filename,
+    /// The filename to upload as.
+    required String filename,
 
-      /// The key to save this file as. Will override destDir and filename if set.
-      String? key,
+    /// The key to save this file as. Will override destDir and filename if set.
+    String? key,
 
-      /// Access control list enables you to manage access to bucket and objects
-      /// For more information visit [https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html]
-      ACL acl = ACL.public_read,
+    /// Access control list enables you to manage access to bucket and objects
+    /// For more information visit [https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html]
+    ACL acl = ACL.public_read,
 
-      /// The content-type of file to upload. defaults to binary/octet-stream.
-      String contentType = 'binary/octet-stream',
+    /// The content-type of file to upload. defaults to binary/octet-stream.
+    String contentType = 'binary/octet-stream',
 
-      /// If set to true, https is used instead of http. Default is true.
-      bool useSSL = true,
+    /// If set to true, https is used instead of http. Default is true.
+    bool useSSL = true,
 
-      /// Additional metadata to be attached to the upload
-      Map<String, String>? metadata,
+    /// Additional metadata to be attached to the upload
+    Map<String, String>? metadata,
 
-      /// The function to call when the upload progress changes
-      void Function(int count, int total)? onSendProgress}) async {
+    /// The function to call when the upload progress changes
+    void Function(int count, int total)? onSendProgress,
+    Map<String, String>? headers,
+  }) async {
     var httpStr = 'http';
     if (useSSL) {
       httpStr += 's';
@@ -96,12 +97,9 @@ class AwsS3 {
 
     final length = await file.length();
 
-    final uri = Uri.parse(endpoint);
     final fileType = lookupMimeType(file.path);
-    FormData formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(file.path,
-          filename: filename, contentType: fileType)
-    });
+    final multiPartFile = await MultipartFile.fromFile(file.path,
+          filename: filename, contentType: fileType);
     // Convert metadata to AWS-compliant params before generating the policy.
     final metadataParams = _convertMetadataToParams(metadata);
 
@@ -121,7 +119,7 @@ class AwsS3 {
         SigV4.calculateSigningKey(secretKey, policy.datetime, region, 's3');
     final signature = SigV4.calculateSignature(signingKey, policy.encode());
 
-    Map<String, String> additionalHeaders = {
+    Map<String, String> params = {
       'key': policy.key,
       'acl': aclToString(acl),
       'X-Amz-Credential': policy.credential,
@@ -138,40 +136,55 @@ class AwsS3 {
         method: 'POST',
         responseType: ResponseType.json,
         contentType: Headers.multipartFormDataContentType);
-    dioClient.options.headers.addAll(additionalHeaders);
 
     // If metadata isn't null, add metadata params to the request.
     if (metadata != null) {
-      dioClient.options.headers.addAll(metadataParams);
+      params.addAll(metadataParams);
+    }
+
+    FormData formData = FormData.fromMap({
+      'file': multiPartFile,
+      ...params,
+    });
+
+    if (headers != null) {
+      dioClient.options.headers.addAll(headers);
     }
 
     try {
-      final res = await dioClient.post(
-          endpoint,
+      final res = await dioClient.post(endpoint,
           options: Options(
             contentType: 'multipart/form-data',
             method: 'POST',
             responseType: ResponseType.json,
           ),
-          queryParameters: metadataParams,
-          data: formData, onSendProgress: onSendProgress);
+          queryParameters: params,
+          data: formData,
+          onSendProgress: onSendProgress);
 
       final statusCode = res.statusCode;
       final message = res.statusMessage;
       final data = res.data;
 
-      return UploadResponse(statusCode: statusCode, message: message, data: data);
+      return UploadResponse(
+          statusCode: statusCode, message: message, data: data);
     } on DioException catch (e) {
       return UploadResponse.fromError(e);
     } catch (e) {
       return UploadResponse(
-          statusCode: 500, message: 'Failed to upload to AWS, with exception: $e');
+          statusCode: 500,
+          message: 'Failed to upload to AWS, with exception: $e');
     }
   }
 
   static MediaType lookupMimeType(String path) {
     final type = path.split('.').last;
-    return MediaType('image', type);
+    final String subType = switch (type) {
+      'png' => 'png',
+      'jpg' || 'jpeg' => 'jpeg',
+      _ => 'png', 
+    };
+    return MediaType('image', subType);
   }
 
   /// A method to transform the map keys into the format compliant with AWS.
