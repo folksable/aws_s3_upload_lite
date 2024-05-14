@@ -52,6 +52,9 @@ class AwsS3 {
 
     /// Additional metadata to be attached to the upload
     Map<String, String>? metadata,
+
+    /// Additional headers to be attached to the upload
+    Map<String, String>? headers
   }) async {
     var httpStr = 'http';
     if (useSSL) {
